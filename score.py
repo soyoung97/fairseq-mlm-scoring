@@ -60,6 +60,10 @@ class JSONDataset(Dataset):
         self.uid_list = None
         self.max_conv = max_conv
         self.load_json()
+        if 'other' in file_path:
+            self.split = 100
+        else:
+            self.split = 99
 
     def load_json(self):
         with open(self.file_path) as f:
@@ -72,11 +76,11 @@ class JSONDataset(Dataset):
             self.json = self.raw_json
 
     def __len__(self):
-        return min(len(self.uid_list), self.max_conv) * 99
+        return min(len(self.uid_list), self.max_conv) * self.split
 
     def __getitem__(self, idx):
-        uid = self.uid_list[idx // 99]
-        nbest_id = 'hyp_' + str(idx % 99 + 1) # hyp_1 ~ hyp_99
+        uid = self.uid_list[idx // self.split]
+        nbest_id = 'hyp_' + str(idx % self.split + 1)
         text = self.json[uid][nbest_id]['text']
         return {'text': text, 'conv_uid': uid, 'nbest_id': nbest_id}
 
