@@ -37,7 +37,7 @@ def rescore(args):
     scorer = MLMScorer()
     scorer.calculate_wer(orig_dataset.json)
     rescore_path = args.ORIG_PATH.split('.json')[0] + '.rescored.json'
-    rescored_dataset = scorer.rescore(orig_dataset.json, pppl_dataset.json) #, scale=args.SCALE)
+    rescored_dataset = scorer.rescore(orig_dataset.json, pppl_dataset.json, scale=args.SCALE)
     scorer.save_json(rescored_dataset, rescore_path)
     print(f"Saved rescored dataset at {rescore_path}.")
     scorer.calculate_wer(rescored_dataset)
@@ -170,7 +170,7 @@ class MLMScorer():
     rescore: implemented sequence-to-sequence rescoring, which decomposes prev score and newly calculated score by certain weight.
             In the paper, it is described that the value lambda is found by grid search.
     """
-    def rescore(self, orig_dataset, pppl_dataset, scale=0.0):
+    def rescore(self, orig_dataset, pppl_dataset, scale=0.5):
         rescored_dataset = copy.deepcopy(pppl_dataset)
         for conv_uid in rescored_dataset:
             for hyp_uid in rescored_dataset[conv_uid]:
