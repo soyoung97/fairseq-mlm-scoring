@@ -3,16 +3,19 @@
 Implementation of the paper:
 **Masked Language Model Scoring**
 
-url:  https://arxiv.org/pdf/1910.14659.pdf
-librispeech datasets are cloned from [librispeech\_link]
+url:  https://arxiv.org/pdf/1910.14659.pd.
+Librispeech datasets are cloned from [librispeech\_link]
 
-I implemented pppl scoring and rescoring for RoBERTa model, librispeech dataset.
-I calculated the WER(word error rate between the original and rescored dataset.)
+I implemented the following:
+* Pre-processing of Librispeech dataset
+* pppl scoring by re-inferencing the n-best generated output
+* Rescoring
+* WER(word error rate) calculating 
 
 
 # Dependencies
  Python version >= 3.6
-* [jiwer]==2.1.0
+* [jiwer]==2.1.0 (For calculating Word Error Rate)
 *  pytorch version==1.4.0
 
 To automatically install dependencies, please refer to requirements.txt.
