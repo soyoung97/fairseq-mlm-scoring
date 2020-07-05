@@ -25,9 +25,10 @@ I used masked Language Models by fairseq. (For example, roberta).
 
 Within dev-clean, dev-other, test-clean, and test-other, please run:
 ```bash  
+mkdir models # you should create models directory first!
 python score.py --ORIG_PATH examples/asr-librispeech-espnet/data/{CHANGE_THIS_PART}.am.json --PPPL_SCORE
 ``` 
-It is slow because it uses cpu. Needs batching & optimization for faster speed.
+It is slow - needs batching & optimization for faster speed.
 
 ### Sequence-to-sequence rescoring (section 3 in the paper)
 
