@@ -13,6 +13,7 @@ import tqdm
 def get_args():
     parser = argparse.ArgumentParser(description='Preprocess librispeech json type dataset.')
     parser.add_argument('--ORIG_PATH', help='json file path')
+    parser.add_argument('--MAX_CONV', default=3, help='maximum number of conversations(affects the total speed)')
     parser.add_argument('--PPPL_PATH', help='path to save the preprocessed file')
     parser.add_argument('--PPPL_SCORE', help='pppl scoring mode', action="store_true")
     parser.add_argument('--RESCORE', help='rescoring mode, giving wer', action="store_true")
@@ -30,13 +31,16 @@ def pppl_score(args):
 
 
 def rescore(args):
-    orig_dataset = JSONDataset(args.ORIG_PATH)
-    pppl_dataset = JSONDataset(args.PPPL_PATH)
+    orig_dataset = JSONDataset(args.ORIG_PATH, max_conv=args.MAX_CONV)
+    pppl_dataset = JSONDataset(args.PPPL_PATH, max_conv=args.MAX_CONV)
+    print("Calculating WER for original dataset ... ")
     scorer = MLMScorer()
+    scorer.calculate_wer(orig_dataset.json)
     rescore_path = args.ORIG_PATH.split('.json')[0] + '.rescored.json'
-    scorer.rescore(orig_dataset, pppl_dataset, rescore_path, scale=args.SCALE)
+    rescored_dataset = scorer.rescore(orig_dataset.json, pppl_dataset.json) #, scale=args.SCALE)
+    scorer.save_json(rescored_dataset, rescore_path)
     print(f"Saved rescored dataset at {rescore_path}.")
-    score = scorer.calculate_wer(dataset.json)
+    scorer.calculate_wer(rescored_dataset)
 
 
 def main():
@@ -48,32 +52,33 @@ def main():
     
 class JSONDataset(Dataset):
     
-    def __init__(self, file_path):
+    def __init__(self, file_path, max_conv=3):
         super().__init__()
         self.file_path = file_path
-        self.json = None
+        self.json = dict()
+        self.raw_json = None
         self.uid_list = None
+        self.max_conv = max_conv
         self.load_json()
 
     def load_json(self):
         with open(self.file_path) as f:
-            self.json = json.load(f)
-            self.uid_list = list(self.json.keys())
+            self.raw_json = json.load(f)
+            self.uid_list = list(self.raw_json.keys())
+        if len(self.uid_list) > self.max_conv:
+            for i in range(self.max_conv):
+                self.json[self.uid_list[i]] = self.raw_json[self.uid_list[i]]
+        else:
+            self.json = self.raw_json
 
     def __len__(self):
-        return len(self.uid_list) * 99
+        return min(len(self.uid_list), self.max_conv) * 99
 
     def __getitem__(self, idx):
         uid = self.uid_list[idx // 99]
         nbest_id = 'hyp_' + str(idx % 99 + 1) # hyp_1 ~ hyp_99
-        conv = self.json[uid]
-        orig_score = conv[nbest_id]['score']
-        text = conv[nbest_id]['text']
-        return {'text': text, 'conv_uid': uid, 'nbest_id': nbest_id, 'ref': conv['ref'],
-                'orig_score': orig_score, 'idx': idx}
-
-
-
+        text = self.json[uid][nbest_id]['text']
+        return {'text': text, 'conv_uid': uid, 'nbest_id': nbest_id}
 
 
 class MLMScorer():
@@ -103,7 +108,7 @@ class MLMScorer():
             best_sentence, reference = self.get_best_sentence_and_ref(data[conv_uid])
             total_wer += wer(reference, best_sentence)
         wer_percent = (total_wer / len(data)) * 100
-        print(f"On {len(data)} unique conversation(s)\nWER: {wer_percent}%")
+        print(f"On {len(data)} unique conversation(s)\nWER: {wer_percent} %")
         return wer_percent
 
     def get_best_sentence_and_ref(self, convs):
@@ -146,8 +151,6 @@ class MLMScorer():
         res_json = copy.deepcopy(dataset.json)
         self._init_loader(dataset)
         for i, data in enumerate(tqdm.tqdm(self.loader)):
-            if i > 500:
-                break
             # mask every token in sentence one at a time, and calculate PPPL.
             pppl_score = self.score_sentence(data['text'])
             bef = res_json[data['conv_uid'][0]][data['nbest_id'][0]]['score']
@@ -163,15 +166,13 @@ class MLMScorer():
     rescore: implemented sequence-to-sequence rescoring, which decomposes prev score and newly calculated score by certain weight.
             In the paper, it is described that the value lambda is found by grid search.
     """
-    def rescore(self, orig_dataset, pppl_dataset, save_path, scale=0.5):
+    def rescore(self, orig_dataset, pppl_dataset, scale=0.0):
         rescored_dataset = copy.deepcopy(pppl_dataset)
         for conv_uid in rescored_dataset:
             for hyp_uid in rescored_dataset[conv_uid]:
                 if hyp_uid == 'ref':
                     continue
                 rescored_dataset[conv_uid][hyp_uid]['score'] = scale * orig_dataset[conv_uid][hyp_uid]['score'] + (1 - scale) * pppl_dataset[conv_uid][hyp_uid]['score']
-        self.calculate_wer(rescored_dataset)
-        self.save_json(rescored_dataset, save_path)
         return rescored_dataset    
 
 

@@ -6,6 +6,9 @@ Implementation of the paper:
 url:  https://arxiv.org/pdf/1910.14659.pdf
 librispeech datasets are cloned from [librispeech\_link]
 
+I implemented pppl scoring and rescoring for RoBERTa model, librispeech dataset.
+I calculated the WER(word error rate between the original and rescored dataset.)
+
 
 # Dependencies
  Python version >= 3.6
@@ -17,7 +20,7 @@ To automatically install dependencies, please refer to requirements.txt.
 
 # Implementation
 
-### pppl scoring (section 2.1 in the paper)
+### pppl scoring (section 2.1 & 2.3 in the paper)
 I used masekd Language Models (For example, roberta) at fairseq.
 within dev-clean, dev-other, test-clean, and test-other, please run:
 ```bash  
@@ -25,14 +28,23 @@ python score.py --ORIG_PATH examples/asr-librispeech-espnet/data/{CHANGE_THIS_PA
 ``` 
 It is slow. Needs batching and optimization for faster speed.
 
-### Sequence-to-sequence rescoring
+### Sequence-to-sequence rescoring (section 3 in the paper)
 
 Similar to pppl scoring. You must run pppl scoring first and get the pppl-scored dataset before you run rescoring.
 ```bash
 python score.py --ORIG_PATH examples/asr-librispeech-espnet/data/{CHANGE_THIS_PART}.am.json\
 --PPPL_PATH examples/asr-librispeech-espnet/data/{CHANGE_THIS_PART}.am.pppl.json --RESCORE
 ```
-This will also give you wer rates.
+This will also give you WER percentage.
+
+### Overall
+To run the whole process,
+please run:
+```
+bash scripts/run.sh
+```
+
+
 
 
 [jiwer]: <https://pypi.org/project/jiwer/>
