@@ -23,6 +23,7 @@ within dev-clean, dev-other, test-clean, and test-other, please run:
 ```bash  
 python score.py --ORIG_PATH examples/asr-librispeech-espnet/data/{CHANGE_THIS_PART}.am.json --PPPL_SCORE
 ``` 
+It is slow. Needs batching and optimization for faster speed.
 
 ### Sequence-to-sequence rescoring
 
