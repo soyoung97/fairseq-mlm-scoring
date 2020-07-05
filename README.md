@@ -1,32 +1,38 @@
-## Introduction 
+# Introduction 
 
 Implementation of the paper:
 **Masked Language Model Scoring**
 
 url:  https://arxiv.org/pdf/1910.14659.pdf
+librispeech datasets are cloned from [librispeech\_link]
 
-## Dependencies
-PyTorch version >= 1.0.0
-Python version >= 3.6
 
-## Install fairseq by source
-cd fairseq
-pip install --editable .
+# Dependencies
+ Python version >= 3.6
+* [jiwer]==2.1.0
+ pytorch version==1.4.0
 
-## Basic settings
-```python
-import torch
-# list available models
-torch.hub.list("pytorch/fairseq") # will list ['bart.base', 'bart.large', 'bart.large.cnn', 'bart.large.mnli', 'bart.large.xsum', 'bpe', 'camembert', 'camembert-base', 'camembert-base-ccnet', 'camembert-base-ccnet-4gb', 'camembert-base-oscar-4gb', 'camembert-base-wikipedia-4gb', 'camembert-large', 'camembert.v0', 'conv.stories', 'conv.stories.pretrained', 'conv.wmt14.en-de', 'conv.wmt14.en-fr', 'conv.wmt17.en-de', 'data.stories', 'dynamicconv.glu.wmt14.en-fr', 'dynamicconv.glu.wmt16.en-de', 'dynamicconv.glu.wmt17.en-de', 'dynamicconv.glu.wmt17.zh-en', 'dynamicconv.no_glu.iwslt14.de-en', 'dynamicconv.no_glu.wmt16.en-de', 'lightconv.glu.wmt14.en-fr', 'lightconv.glu.wmt16.en-de', 'lightconv.glu.wmt17.en-de', 'lightconv.glu.wmt17.zh-en', 'lightconv.no_glu.iwslt14.de-en', 'lightconv.no_glu.wmt16.en-de', 'roberta.base', 'roberta.large', 'roberta.large.mnli', 'roberta.large.wsc', 'tokenizer', 'transformer.wmt14.en-fr', 'transformer.wmt16.en-de', 'transformer.wmt18.en-de', 'transformer.wmt19.de-en', 'transformer.wmt19.de-en.single_model', 'transformer.wmt19.en-de', 'transformer.wmt19.en-de.single_model', 'transformer.wmt19.en-ru', 'transformer.wmt19.en-ru.single_model', 'transformer.wmt19.ru-en', 'transformer.wmt19.ru-en.single_model', 'transformer_lm.gbw.adaptive_huge', 'transformer_lm.wiki103.adaptive', 'transformer_lm.wmt19.de', 'transformer_lm.wmt19.en', 'transformer_lm.wmt19.ru', 'xlmr.base', 'xlmr.large']
-# we will import masekd Language Models (For example, roberta)
+To automatically install dependencies, please refer to requirements.txt.
 
-```
 
-# Scoring
-To run scoring, please follow the below command:
+# Implementation
 
+### pppl scoring (section 2.1 in the paper)
+I used masekd Language Models (For example, roberta) at fairseq.
+within dev-clean, dev-other, test-clean, and test-other, please run:
+```bash  
+python score.py --ORIG_PATH examples/asr-librispeech-espnet/data/{CHANGE_THIS_PART}.am.json --PPPL_SCORE
+``` 
+
+### Sequence-to-sequence rescoring
+
+Similar to pppl scoring. You must run pppl scoring first and get the pppl-scored dataset before you run rescoring.
 ```bash
-python score.py --PATH examples/asr-librispeech-espnet/data/dev-clean.am.json  --SAVE_PATH 3 --GROUP 2 --SUBSET 1
+python score.py --ORIG_PATH examples/asr-librispeech-espnet/data/{CHANGE_THIS_PART}.am.json\
+--PPPL_PATH examples/asr-librispeech-espnet/data/{CHANGE_THIS_PART}.am.pppl.json --RESCORE
 ```
+This will also give you wer rates.
 
 
+[jiwer]: <https://pypi.org/project/jiwer/>
+[librispeech\_link]: <https://github.com/awslabs/mlm-scoring/tree/master/examples/asr-librispeech-espnet>
